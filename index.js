@@ -7,8 +7,9 @@ const app = express();
 var connection = mysql.createConnection({
   host: 'localhost',
   user: 'root',
+  port:'3306',
   password: 'password',
-  database: 'library',
+  database: 'world',
 });
 
 connection.connect(function (err) {
@@ -20,20 +21,20 @@ app.listen(PORT, () => {
   console.log(`Server listening on ${PORT}`);
 });
 
-app.get('/', (req, res) => {
-  res.send('This is the first message');
+app.get('/a', (req, res) => {
+  res.json({this:"The first page"});
 });
 
-app.get('/books', function (req, res) {
+app.get('/api', function (req, res) {
   connection.query(
     'select * from city limit 300',
     function (error, results, fields) {
       if (error) throw error;
-      res.end(JSON.stringify({ thing: results }));
+      res.end(JSON.stringify({thing:results}));
     }
   );
 });
-
+ 
 app.get('/books/:id', function (req, res) {
   connection.query(
     'select * from books where Id=?',
