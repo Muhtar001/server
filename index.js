@@ -1,89 +1,46 @@
-const express = require('express');
+import express from 'express';
+import bodyParser from 'body-parser';
+import dotenv from 'dotenv';
+import path from 'path';
+import cookieParser from 'cookie-parser';
+import session from 'express-session';
+import routes from './routes/index.js';
 
-const PORT = process.env.PORT || 5000;
-const mysql = require('mysql');
+dotenv.config();
 const app = express();
 
-var connection = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  port:'3306',
-  password: 'password',
-  database: 'world',
-});
+// body-parser configuration
+app
+  .use(bodyParser.json()) // to support JSON-encoded bodies
+  .use(
+    bodyParser.urlencoded({
+      // to support URL-encoded bodies
+      extended: true,
+    }),
+  )
 
-connection.connect(function (err) {
-  if (err) throw err;
-  console.log('Database has been connected successfully.');
-});
+  // Express session configuration
+  .use(
+    session({
+      secret: '123456cat',
+      resave: false,
+      saveUninitialized: true,
+      cookie: { maxAge: 60000 },
+    }),
+  )
 
-app.listen(PORT, () => {
-  console.log(`Server listening on ${PORT}`);
-});
+  // Cookie parser configuration
+  .use(cookieParser())
 
-app.get('/a', (req, res) => {
-  res.json({this:"The first page"});
-});
+  // static file configuration
+  .use(express.static(path.join(__dirname, 'public')))
 
-app.get('/api', function (req, res) {
-  connection.query(
-    'select * from city limit 300',
-    function (error, results, fields) {
-      if (error) throw error;
-      res.end(JSON.stringify({thing:results}));
-    }
-  );
-});
- 
-app.get('/books/:id', function (req, res) {
-  connection.query(
-    'select * from books where Id=?',
-    [req.params.id],
-    function (error, results, fields) {
-      if (error) throw error;
-      res.end(JSON.stringify(results));
-    }
-  );
-});
+  // Routing configuration
+  .use('/api', routes)
 
-app.post('/books', function (req, res) {
-  var params = req.body;
-  console.log(params);
-  connection.query(
-    'INSERT INTO books SET ?',
-    params,
-    function (error, results, fields) {
-      if (error) throw error;
-      res.end(JSON.stringify(results));
-    }
-  );
-});
+  // Server configuration
+  .listen(process.env.PORT, () => {
+    console.log(`Server listening on ${process.env.PORT}`);
+  });
 
-app.put('/books', function (req, res) {
-  connection.query(
-    'UPDATE `books` SET `Name`=?,`Address`=?,`Country`=?,`Phone`=? where `Id`=?',
-    [
-      req.body.Name,
-      req.body.Address,
-      req.body.Country,
-      req.body.Phone,
-      req.body.Id,
-    ],
-    function (error, results, fields) {
-      if (error) throw error;
-      res.end(JSON.stringify(results));
-    }
-  );
-});
-
-app.delete('/books', function (req, res) {
-  console.log(req.body);
-  connection.query(
-    'DELETE FROM `books` WHERE `Id`=?',
-    [req.body.Id],
-    function (error, results, fields) {
-      if (error) throw error;
-      res.end('Record has been deleted!');
-    }
-  );
-});
+export default app;
